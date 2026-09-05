@@ -11,16 +11,16 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTestQueryClient } from '../../test/createTestQueryClient'
 import { TestQueryClientProvider } from '../../test/TestQueryClientProvider'
-import { ClientsPage } from './ClientsPage'
-import { useClients } from './useClients'
+import { WorkersPage } from './WorkersPage'
+import { useWorkers } from './useWorkers'
 
 const userId = '01990db2-4a3f-7d35-a2bd-6b69ac9c75bd'
 const organisationId = '01990db2-4a3f-7d35-a2bd-6b69ac9c75be'
 
-describe('ClientsPage', () => {
+describe('WorkersPage', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('shows a loading state while clients are requested', () => {
+  it('shows a loading state while workers are requested', () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -30,24 +30,24 @@ describe('ClientsPage', () => {
 
     renderPage()
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading clients…')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading workers…')
   })
 
-  it('lists the selected organisations clients', async () => {
+  it('lists the selected organisations workers', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
       .mockResolvedValueOnce(
-        clientPageResponse(['Alpha Logistics', 'Zeta Care']),
+        workerPageResponse(['Amelia Brooks', 'Zoe Carter']),
       )
     vi.stubGlobal('fetch', fetchMock)
 
     renderPage()
 
-    expect(await screen.findByText('Alpha Logistics')).toBeInTheDocument()
-    expect(screen.getByText('Zeta Care')).toBeInTheDocument()
+    expect(await screen.findByText('Amelia Brooks')).toBeInTheDocument()
+    expect(screen.getByText('Zoe Carter')).toBeInTheDocument()
     expect(
-      screen.getByText('Manage this organisation’s clients.'),
+      screen.getByText('Manage this organisation’s workers.'),
     ).toBeInTheDocument()
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(
@@ -56,16 +56,16 @@ describe('ClientsPage', () => {
     expect(
       within(breadcrumb).getByText('Northstar Workforce'),
     ).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('Clients')).toHaveAttribute(
+    expect(within(breadcrumb).getByText('Workers')).toHaveAttribute(
       'aria-current',
       'page',
     )
     expect(
       screen.getByText('Northstar Workforce', { selector: 'p' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('list', { name: 'Clients' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Workers' })).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
-      `/api/organisations/${organisationId}/clients?page=1&pageSize=20`,
+      `/api/organisations/${organisationId}/workers?page=1&pageSize=20`,
       expect.objectContaining({
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
@@ -79,89 +79,89 @@ describe('ClientsPage', () => {
       vi
         .fn<typeof fetch>()
         .mockResolvedValueOnce(organisationsResponse())
-        .mockResolvedValueOnce(clientPageResponse(['Alpha Logistics'])),
+        .mockResolvedValueOnce(workerPageResponse(['Amelia Brooks'])),
     )
 
     renderPage(createTestQueryClient(), organisationId.toUpperCase())
 
-    expect(await screen.findByText('Alpha Logistics')).toBeInTheDocument()
+    expect(await screen.findByText('Amelia Brooks')).toBeInTheDocument()
     expect(
-      screen.queryByText('We couldn’t load this organisation’s clients'),
+      screen.queryByText('We couldn’t load this organisation’s workers'),
     ).not.toBeInTheDocument()
   })
 
-  it('shows an empty state when the organisation has no clients', async () => {
+  it('shows an empty state when the organisation has no workers', async () => {
     vi.stubGlobal(
       'fetch',
       vi
         .fn<typeof fetch>()
         .mockResolvedValueOnce(organisationsResponse())
-        .mockResolvedValueOnce(clientPageResponse([])),
+        .mockResolvedValueOnce(workerPageResponse([])),
     )
 
     renderPage()
 
     expect(
-      await screen.findByRole('heading', { name: 'No clients yet' }),
+      await screen.findByRole('heading', { name: 'No workers yet' }),
     ).toBeInTheDocument()
   })
 
-  it('returns focus to Add client when creation is cancelled', async () => {
+  it('returns focus to Add worker when creation is cancelled', async () => {
     vi.stubGlobal(
       'fetch',
       vi
         .fn<typeof fetch>()
         .mockResolvedValueOnce(organisationsResponse())
-        .mockResolvedValueOnce(clientPageResponse([])),
+        .mockResolvedValueOnce(workerPageResponse([])),
     )
 
     renderPage()
     expect(
-      await screen.findByRole('heading', { name: 'No clients yet' }),
+      await screen.findByRole('heading', { name: 'No workers yet' }),
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add client' }))
-    expect(screen.getByLabelText('Client name')).toHaveFocus()
+    fireEvent.click(screen.getByRole('button', { name: 'Add worker' }))
+    expect(screen.getByLabelText('Worker name')).toHaveFocus()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(
-      screen.queryByRole('form', { name: 'Add client' }),
+      screen.queryByRole('form', { name: 'Add worker' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add client' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Add worker' })).toHaveFocus()
   })
 
-  it('adds a client and refreshes the organisation client list', async () => {
+  it('adds a worker and refreshes the organisation worker list', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(clientPageResponse([]))
+      .mockResolvedValueOnce(workerPageResponse([]))
       .mockResolvedValueOnce(Response.json({ token: 'antiforgery-token' }))
-      .mockResolvedValueOnce(createdClientResponse('Acme Operations'))
-      .mockResolvedValueOnce(clientPageResponse(['Acme Operations']))
+      .mockResolvedValueOnce(createdWorkerResponse('Alex Morgan'))
+      .mockResolvedValueOnce(workerPageResponse(['Alex Morgan']))
     vi.stubGlobal('fetch', fetchMock)
 
     renderPage()
     expect(
-      await screen.findByRole('heading', { name: 'No clients yet' }),
+      await screen.findByRole('heading', { name: 'No workers yet' }),
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add client' }))
-    expect(screen.getByLabelText('Client name')).toHaveFocus()
-    fireEvent.change(screen.getByLabelText('Client name'), {
-      target: { value: '  Acme Operations  ' },
+    fireEvent.click(screen.getByRole('button', { name: 'Add worker' }))
+    expect(screen.getByLabelText('Worker name')).toHaveFocus()
+    fireEvent.change(screen.getByLabelText('Worker name'), {
+      target: { value: '  Alex Morgan  ' },
     })
-    fireEvent.submit(screen.getByRole('form', { name: 'Add client' }))
+    fireEvent.submit(screen.getByRole('form', { name: 'Add worker' }))
 
-    expect(await screen.findByText('Acme Operations was added.')).toBeVisible()
-    expect(await screen.findByText('Acme Operations')).toBeInTheDocument()
+    expect(await screen.findByText('Alex Morgan was added.')).toBeVisible()
+    expect(await screen.findByText('Alex Morgan')).toBeInTheDocument()
     expect(
-      screen.queryByRole('form', { name: 'Add client' }),
+      screen.queryByRole('form', { name: 'Add worker' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add client' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Add worker' })).toHaveFocus()
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      `/api/organisations/${organisationId}/clients`,
+      `/api/organisations/${organisationId}/workers`,
       {
         method: 'POST',
         credentials: 'same-origin',
@@ -170,12 +170,12 @@ describe('ClientsPage', () => {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': 'antiforgery-token',
         },
-        body: JSON.stringify({ name: 'Acme Operations' }),
+        body: JSON.stringify({ name: 'Alex Morgan' }),
       },
     )
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      `/api/organisations/${organisationId}/clients?page=1&pageSize=20`,
+      `/api/organisations/${organisationId}/workers?page=1&pageSize=20`,
       expect.any(Object),
     )
   })
@@ -208,18 +208,18 @@ describe('ClientsPage', () => {
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
       .mockResolvedValueOnce(new Response(null, { status: 503 }))
-      .mockResolvedValueOnce(clientPageResponse([]))
+      .mockResolvedValueOnce(workerPageResponse([]))
     vi.stubGlobal('fetch', fetchMock)
 
     renderPage()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'We couldn’t load this organisation’s clients',
+      'We couldn’t load this organisation’s workers',
     )
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(
-      await screen.findByRole('heading', { name: 'No clients yet' }),
+      await screen.findByRole('heading', { name: 'No workers yet' }),
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
@@ -228,40 +228,40 @@ describe('ClientsPage', () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(clientPageResponse(['Alpha Logistics'], 1, 21))
-      .mockResolvedValueOnce(clientPageResponse(['Zeta Care'], 2, 21))
+      .mockResolvedValueOnce(workerPageResponse(['Amelia Brooks'], 1, 21))
+      .mockResolvedValueOnce(workerPageResponse(['Zoe Carter'], 2, 21))
     vi.stubGlobal('fetch', fetchMock)
 
     renderPage()
 
-    expect(await screen.findByText('Alpha Logistics')).toBeInTheDocument()
+    expect(await screen.findByText('Amelia Brooks')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
-    expect(await screen.findByText('Zeta Care')).toBeInTheDocument()
-    expect(screen.queryByText('Alpha Logistics')).not.toBeInTheDocument()
+    expect(await screen.findByText('Zoe Carter')).toBeInTheDocument()
+    expect(screen.queryByText('Amelia Brooks')).not.toBeInTheDocument()
     expect(screen.getByText('Page 2 of 2')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      `/api/organisations/${organisationId}/clients?page=2&pageSize=20`,
+      `/api/organisations/${organisationId}/workers?page=2&pageSize=20`,
       expect.any(Object),
     )
   })
 
-  it('does not show cached clients when access is lost during a refetch', async () => {
+  it('does not show cached workers when access is lost during a refetch', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(clientPageResponse(['Alpha Logistics']))
+      .mockResolvedValueOnce(workerPageResponse(['Amelia Brooks']))
       .mockResolvedValueOnce(new Response(null, { status: 404 }))
     vi.stubGlobal('fetch', fetchMock)
     const queryClient = createTestQueryClient()
 
     renderPage(queryClient)
-    expect(await screen.findByText('Alpha Logistics')).toBeInTheDocument()
+    expect(await screen.findByText('Amelia Brooks')).toBeInTheDocument()
 
     await act(async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['clients', userId, organisationId, 1],
+        queryKey: ['workers', userId, organisationId, 1],
       })
     })
 
@@ -270,29 +270,29 @@ describe('ClientsPage', () => {
         name: 'Organisation unavailable',
       }),
     ).toBeInTheDocument()
-    expect(screen.queryByText('Alpha Logistics')).not.toBeInTheDocument()
+    expect(screen.queryByText('Amelia Brooks')).not.toBeInTheDocument()
   })
 
   it('retains the displayed page during loading and blocks repeated navigation', async () => {
     let finishRequest: () => void = () => undefined
     const nextPage = new Promise<Response>((resolve) => {
       finishRequest = () => {
-        resolve(clientPageResponse(['Zeta Care'], 2, 41))
+        resolve(workerPageResponse(['Zoe Carter'], 2, 41))
       }
     })
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(clientPageResponse(['Alpha Logistics'], 1, 41))
+      .mockResolvedValueOnce(workerPageResponse(['Amelia Brooks'], 1, 41))
       .mockReturnValueOnce(nextPage)
     vi.stubGlobal('fetch', fetchMock)
     renderPage()
-    await screen.findByText('Alpha Logistics')
+    await screen.findByText('Amelia Brooks')
     const next = screen.getByRole('button', { name: 'Next' })
     fireEvent.click(next)
     expect(await screen.findByText('Loading page 2…')).toBeInTheDocument()
-    expect(screen.getByText('Alpha Logistics')).toBeInTheDocument()
-    expect(screen.getByRole('list', { name: 'Clients' })).toHaveAttribute(
+    expect(screen.getByText('Amelia Brooks')).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Workers' })).toHaveAttribute(
       'aria-busy',
       'true',
     )
@@ -302,24 +302,24 @@ describe('ClientsPage', () => {
     act(() => {
       finishRequest()
     })
-    expect(await screen.findByText('Zeta Care')).toBeInTheDocument()
-    expect(screen.queryByText('Alpha Logistics')).not.toBeInTheDocument()
+    expect(await screen.findByText('Zoe Carter')).toBeInTheDocument()
+    expect(screen.queryByText('Amelia Brooks')).not.toBeInTheDocument()
     expect(next).toHaveAttribute('aria-disabled', 'false')
   })
 
   it.each(['user', 'organisation'] as const)(
-    'never carries placeholder clients across a changed %s',
+    'never carries placeholder workers across a changed %s',
     async (boundary) => {
       const client = createTestQueryClient()
       vi.stubGlobal(
         'fetch',
         vi
           .fn<typeof fetch>()
-          .mockResolvedValueOnce(clientPageResponse(['Private client']))
+          .mockResolvedValueOnce(workerPageResponse(['Private worker']))
           .mockReturnValue(new Promise<Response>(() => undefined)),
       )
       const { result, rerender } = renderHook(
-        ({ user, organisation }) => useClients(user, organisation, 1),
+        ({ user, organisation }) => useWorkers(user, organisation, 1),
         {
           initialProps: { user: userId, organisation: organisationId },
           wrapper: ({ children }) => (
@@ -347,37 +347,37 @@ describe('ClientsPage', () => {
       const fetchMock = vi
         .fn<typeof fetch>()
         .mockResolvedValueOnce(organisationsResponse())
-        .mockResolvedValueOnce(clientPageResponse([]))
+        .mockResolvedValueOnce(workerPageResponse([]))
         .mockResolvedValueOnce(new Response(null, { status }))
-        .mockResolvedValueOnce(clientPageResponse([]))
+        .mockResolvedValueOnce(workerPageResponse([]))
       vi.stubGlobal('fetch', fetchMock)
       const client = createTestQueryClient()
       renderPage(client)
-      fireEvent.click(await screen.findByRole('button', { name: 'Add client' }))
-      fireEvent.change(screen.getByLabelText('Client name'), {
+      fireEvent.click(await screen.findByRole('button', { name: 'Add worker' }))
+      fireEvent.change(screen.getByLabelText('Worker name'), {
         target: { value: 'Unsaved draft' },
       })
       await act(async () => {
         await client.invalidateQueries({
-          queryKey: ['clients', userId, organisationId],
+          queryKey: ['workers', userId, organisationId],
         })
       })
       if (status !== 503) {
         await waitFor(() =>
           expect(
-            screen.queryByRole('form', { name: 'Add client' }),
+            screen.queryByRole('form', { name: 'Add worker' }),
           ).not.toBeInTheDocument(),
         )
         return
       }
       await screen.findByRole('alert')
-      expect(screen.getByLabelText('Client name')).toHaveValue('Unsaved draft')
+      expect(screen.getByLabelText('Worker name')).toHaveValue('Unsaved draft')
       fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
       fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
       await waitFor(() =>
         expect(screen.queryByRole('alert')).not.toBeInTheDocument(),
       )
-      expect(screen.getByRole('button', { name: 'Add client' })).toHaveFocus()
+      expect(screen.getByRole('button', { name: 'Add worker' })).toHaveFocus()
     },
   )
 
@@ -385,43 +385,43 @@ describe('ClientsPage', () => {
     let finishCreation: () => void = () => undefined
     const pending = new Promise<Response>((resolve) => {
       finishCreation = () => {
-        resolve(createdClientResponse('Saved name'))
+        resolve(createdWorkerResponse('Saved name'))
       }
     })
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(clientPageResponse([]))
+      .mockResolvedValueOnce(workerPageResponse([]))
       .mockResolvedValueOnce(Response.json({ token: 'antiforgery-token' }))
       .mockReturnValueOnce(pending)
       .mockResolvedValueOnce(new Response(null, { status: 503 }))
-      .mockResolvedValueOnce(clientPageResponse(['Saved name']))
+      .mockResolvedValueOnce(workerPageResponse(['Saved name']))
     vi.stubGlobal('fetch', fetchMock)
     const client = createTestQueryClient()
     renderPage(client)
-    fireEvent.click(await screen.findByRole('button', { name: 'Add client' }))
-    fireEvent.change(screen.getByLabelText('Client name'), {
+    fireEvent.click(await screen.findByRole('button', { name: 'Add worker' }))
+    fireEvent.change(screen.getByLabelText('Worker name'), {
       target: { value: 'Saved name' },
     })
-    fireEvent.submit(screen.getByRole('form', { name: 'Add client' }))
+    fireEvent.submit(screen.getByRole('form', { name: 'Add worker' }))
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(4)
     })
     await act(async () => {
       await client.invalidateQueries({
-        queryKey: ['clients', userId, organisationId],
+        queryKey: ['workers', userId, organisationId],
       })
     })
     await screen.findByRole('alert')
-    expect(screen.getByLabelText('Client name')).toHaveValue('Saved name')
-    expect(screen.getByLabelText('Client name')).toBeDisabled()
+    expect(screen.getByLabelText('Worker name')).toHaveValue('Saved name')
+    expect(screen.getByLabelText('Worker name')).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     act(finishCreation)
     expect(await screen.findByText('Saved name was added.')).toBeVisible()
     expect(
-      screen.queryByRole('form', { name: 'Add client' }),
+      screen.queryByRole('form', { name: 'Add worker' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add client' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Add worker' })).toHaveFocus()
     expect(screen.getByText('Saved name')).toBeVisible()
     expect(fetchMock).toHaveBeenCalledTimes(6)
   })
@@ -434,12 +434,12 @@ function renderPage(
   return render(
     <TestQueryClientProvider client={client}>
       <MemoryRouter
-        initialEntries={[`/organisations/${routeOrganisationId}/clients`]}
+        initialEntries={[`/organisations/${routeOrganisationId}/workers`]}
       >
         <Routes>
           <Route
-            path="organisations/:organisationId/clients"
-            element={<ClientsPage userId={userId} />}
+            path="organisations/:organisationId/workers"
+            element={<WorkersPage userId={userId} />}
           />
         </Routes>
       </MemoryRouter>
@@ -447,7 +447,7 @@ function renderPage(
   )
 }
 
-function clientPageResponse(
+function workerPageResponse(
   names: string[],
   page = 1,
   totalCount = names.length,
@@ -473,7 +473,7 @@ function organisationsResponse() {
   ])
 }
 
-function createdClientResponse(name: string) {
+function createdWorkerResponse(name: string) {
   return Response.json(
     {
       id: '01990db2-4a3f-7d35-a2bd-6b69ac9c7601',

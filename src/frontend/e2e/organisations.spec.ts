@@ -20,6 +20,11 @@ test('navigates organisations, breadcrumbs, deep links and unknown routes', asyn
   ).toHaveCount(0)
   await list.getByRole('link').focus()
   await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(`/organisations/${account.organisationId}`)
+  await page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('link', { name: 'Clients', exact: true })
+    .click()
   await expect(page).toHaveURL(clientsPath(account))
   await expect(
     page
@@ -98,7 +103,13 @@ test('conceals another tenant and isolates cached clients when switching account
 }) => {
   await seedClients(request, account, 1)
   await page
-    .getByRole('link', { name: `View clients for ${account.organisationName}` })
+    .getByRole('link', {
+      name: `Open workspace for ${account.organisationName}`,
+    })
+    .click()
+  await page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('link', { name: 'Clients', exact: true })
     .click()
   await expect(page.getByText('Client 01', { exact: true })).toBeVisible()
   const documentStartedAt = await page.evaluate(() => performance.timeOrigin)
@@ -149,7 +160,13 @@ test('conceals another tenant and isolates cached clients when switching account
         .getByRole('listitem'),
     ).toHaveCount(1)
     await page
-      .getByRole('link', { name: `View clients for ${other.organisationName}` })
+      .getByRole('link', {
+        name: `Open workspace for ${other.organisationName}`,
+      })
+      .click()
+    await page
+      .getByRole('navigation', { name: 'Primary' })
+      .getByRole('link', { name: 'Clients', exact: true })
       .click()
     await expect(page).toHaveURL(clientsPath(other))
     await expect(

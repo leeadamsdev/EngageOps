@@ -127,7 +127,9 @@ if (developmentDataAction is not null)
                     seedResult.Email,
                     organisation.Name,
                     organisation.AddedClientCount,
-                    organisation.TotalClientCount);
+                    organisation.TotalClientCount,
+                    organisation.AddedWorkerCount,
+                    organisation.TotalWorkerCount);
             }
             break;
 

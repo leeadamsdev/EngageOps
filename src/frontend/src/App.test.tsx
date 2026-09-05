@@ -72,31 +72,40 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled()
   })
 
-  it('opens the selected organisations client workspace', async () => {
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(authenticatedSessionResponse())
-      .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(organisationsResponse())
-      .mockResolvedValueOnce(clientsResponse())
+  it('opens the selected organisation overview', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url
+      if (url === '/api/auth/session')
+        return Promise.resolve(authenticatedSessionResponse())
+      if (url === '/api/organisations')
+        return Promise.resolve(organisationsResponse())
+      return Promise.resolve(clientsResponse([]))
+    })
     vi.stubGlobal('fetch', fetchMock)
-
     renderApp()
-
     fireEvent.click(
       await screen.findByRole('link', {
-        name: 'View clients for Northstar Workforce',
+        name: 'Open workspace for Northstar Workforce',
       }),
     )
-
     expect(
-      await screen.findByRole('heading', { name: 'Clients' }),
+      await screen.findByRole('heading', { name: 'Northstar Workforce' }),
     ).toBeInTheDocument()
-    expect(await screen.findByText('Acme Operations')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Clients' })).toHaveAttribute(
+    expect(
+      await screen.findByRole('link', { name: 'View clients, 0 total' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute(
       'aria-current',
       'page',
     )
+    expect(
+      screen.getByRole('link', { name: 'Switch organisation' }),
+    ).toHaveAttribute('href', '/organisations')
   })
 
   it('allows a failed session request to be retried', async () => {
@@ -163,6 +172,27 @@ describe('App', () => {
     )
   })
 
+  it('returns to sign-in when loading workers finds an expired session', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(authenticatedSessionResponse())
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderApp(['/organisations/01990db2-4a3f-7d35-a2bd-6b69ac9c75be/workers'])
+
+    expect(
+      await screen.findByRole('heading', { name: 'Welcome back' }),
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      '/api/auth/session',
+      expect.objectContaining({ credentials: 'same-origin' }),
+    )
+  })
+
   it('returns to sign-in when the session expires while adding a client', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
@@ -184,6 +214,40 @@ describe('App', () => {
       target: { value: 'Acme Operations' },
     })
     fireEvent.submit(screen.getByRole('form', { name: 'Add client' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Welcome back' }),
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      '/api/auth/session',
+      expect.objectContaining({ credentials: 'same-origin' }),
+    )
+  })
+
+  it('returns to sign-in when the session expires while adding a worker', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(authenticatedSessionResponse())
+      .mockResolvedValueOnce(organisationsResponse())
+      .mockResolvedValueOnce(
+        Response.json({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
+      )
+      .mockResolvedValueOnce(Response.json({ token: 'antiforgery-token' }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderApp(['/organisations/01990db2-4a3f-7d35-a2bd-6b69ac9c75be/workers'])
+    expect(
+      await screen.findByRole('heading', { name: 'No workers yet' }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add worker' }))
+    fireEvent.change(screen.getByLabelText('Worker name'), {
+      target: { value: 'Alex Morgan' },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: 'Add worker' }))
 
     expect(
       await screen.findByRole('heading', { name: 'Welcome back' }),

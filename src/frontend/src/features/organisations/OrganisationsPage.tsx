@@ -79,9 +79,9 @@ export function OrganisationsPage({ userId }: OrganisationsPageProps) {
               {organisations.data.map((organisation) => (
                 <li key={organisation.id}>
                   <Link
-                    aria-label={`View clients for ${organisation.name}`}
+                    aria-label={`Open workspace for ${organisation.name}`}
                     className="group flex min-h-20 items-center gap-4 px-5 py-4 transition-colors duration-200 hover:bg-slate-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-700 sm:px-6"
-                    to={`/organisations/${encodeURIComponent(organisation.id)}/clients`}
+                    to={`/organisations/${encodeURIComponent(organisation.id)}`}
                   >
                     <span className="grid size-11 shrink-0 place-items-center rounded-control bg-blue-50 text-brand-700 transition-colors duration-200 group-hover:bg-blue-100">
                       <FiBriefcase aria-hidden="true" className="size-5" />
@@ -90,7 +90,7 @@ export function OrganisationsPage({ userId }: OrganisationsPageProps) {
                       <p className="text-base font-semibold wrap-anywhere text-ink">
                         {organisation.name}
                       </p>
-                      <p className="mt-1 text-sm text-muted">View clients</p>
+                      <p className="mt-1 text-sm text-muted">Open workspace</p>
                     </div>
                     <FiChevronRight
                       aria-hidden="true"

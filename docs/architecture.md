@@ -108,27 +108,39 @@ Restricted foreign-key deletion protects operational relationships. See
 Clients and workers are paginated in name/ID order. Assignments use start date
 descending, then ID, with a corresponding database index. The shared
 [`Pagination`](../src/backend/EngageOps.Api/Http/Pagination.cs) defaults to 50 items
-and caps page size at 100; the client UI explicitly requests 20.
+and caps page size at 100; the client and worker UIs explicitly request 20.
 
 ## Frontend responsibilities
 
 [`main.tsx`](../src/frontend/src/main.tsx) installs React Router and the shared
 TanStack Query client. `App.tsx` handles session state and authenticated routes:
-`/organisations` and `/organisations/:organisationId/clients`.
+`/organisations`, `/organisations/:organisationId`, `/organisations/:organisationId/clients` and
+`/organisations/:organisationId/workers`.
 
-- `features/auth`, `features/organisations` and `features/clients` colocate components,
-  API adapters, query/mutation hooks and behaviour tests.
-- `components` contains the shared application shell and wordmark.
+- `features/auth`, `features/organisations`, `features/clients` and `features/workers`
+  colocate components, API adapters, query/mutation hooks and behaviour tests.
+- `components` contains the shared application shell, wordmark, name-creation form,
+  list loading state and pagination controls. Feature forms own their mutations
+  and messages.
+- `features/organisations` also owns the workspace overview, organisation context,
+  navigation and breadcrumbs. The picker opens the overview; the organisation name
+  in a feature breadcrumb links back to it. Switching returns to the picker.
 - `lib` contains HTTP errors, response guards, validation-error parsing and
   antiforgery token access.
 - `index.css` defines the visual foundation; component classes implement responsive
   layout, focus indicators and reduced-motion behaviour.
 
-TanStack Query owns server state. Organisation queries include the user ID; client
-queries include the user, organisation and page. Form visibility and pagination
+TanStack Query owns server state. Organisation queries include the user ID;
+client and worker queries include the user, organisation and page. Form visibility and pagination
 selection are local UI state. API adapters own `fetch` calls, handwritten TypeScript
-contracts and runtime response validation. The sign-in and client-creation forms
-use custom accessible validation, linked field errors and pending/error feedback.
+contracts and runtime response validation. The sign-in, client-creation
+and worker-creation forms use custom accessible validation, linked field errors and pending/error feedback.
+
+The overview reads `totalCount` through the existing client and worker list hooks.
+It shares their user/organisation-scoped caches and creation invalidation, so totals
+refresh when returning from a list. It checks accessible organisations before
+requesting those lists and presents loading, retry and unavailable states without
+substituting failed requests with zero counts.
 
 See [Testing](testing.md) for checks around these boundaries and
 [Local development](local-development.md) for runtime configuration.

@@ -48,20 +48,30 @@ public class DevelopmentDataSeederTests
                     Assert.Equal(OrganisationName, organisation.Name);
                     Assert.Equal(45, organisation.AddedClientCount);
                     Assert.Equal(45, organisation.TotalClientCount);
+                    Assert.Equal(45, organisation.AddedWorkerCount);
+                    Assert.Equal(45, organisation.TotalWorkerCount);
                 },
                 organisation =>
                 {
                     Assert.Equal("Cedar Demo Workforce", organisation.Name);
                     Assert.Equal(3, organisation.AddedClientCount);
                     Assert.Equal(3, organisation.TotalClientCount);
+                    Assert.Equal(3, organisation.AddedWorkerCount);
+                    Assert.Equal(3, organisation.TotalWorkerCount);
                 },
                 organisation =>
                 {
                     Assert.Equal("Newhaven Demo Workforce", organisation.Name);
                     Assert.Equal(0, organisation.AddedClientCount);
                     Assert.Equal(0, organisation.TotalClientCount);
+                    Assert.Equal(0, organisation.AddedWorkerCount);
+                    Assert.Equal(0, organisation.TotalWorkerCount);
                 });
             Assert.All(secondSeed.Organisations, organisation => Assert.Equal(0, organisation.AddedClientCount));
+            Assert.All(secondSeed.Organisations, organisation => Assert.Equal(0, organisation.AddedWorkerCount));
+            Assert.Equal(
+                firstSeed.Organisations.Select(organisation => organisation.TotalWorkerCount),
+                secondSeed.Organisations.Select(organisation => organisation.TotalWorkerCount));
             Assert.Equal(
                 firstSeed.Organisations.Select(organisation => organisation.TotalClientCount),
                 secondSeed.Organisations.Select(organisation => organisation.TotalClientCount));
@@ -83,12 +93,18 @@ public class DevelopmentDataSeederTests
             {
                 Assert.Equal(organisation.TotalClientCount, await database.Clients.CountAsync(
                     client => client.OrganisationId == organisation.OrganisationId, cancellationToken));
+                var workerNames = await database.Workers
+                    .Where(worker => worker.OrganisationId == organisation.OrganisationId)
+                    .Select(worker => worker.Name)
+                    .ToListAsync(cancellationToken);
+                Assert.Equal(organisation.TotalWorkerCount, workerNames.Count);
+                Assert.Equal(workerNames.Count, workerNames.Distinct(StringComparer.OrdinalIgnoreCase).Count());
             }
 
             var client = await database.Clients
                 .FirstAsync(candidate => candidate.OrganisationId == organisationId,
                     cancellationToken);
-            var worker = Worker.Create(organisationId, "Alex Morgan");
+            var worker = Worker.Create(organisationId, "Manually added worker");
             var assignment = Assignment.Create(
                 organisationId,
                 client.Id,
@@ -108,7 +124,7 @@ public class DevelopmentDataSeederTests
 
             Assert.Equal(3, reset.OrganisationCount);
             Assert.Equal(48, reset.ClientCount);
-            Assert.Equal(1, reset.WorkerCount);
+            Assert.Equal(49, reset.WorkerCount);
             Assert.Equal(1, reset.AssignmentCount);
         }
 
@@ -171,6 +187,7 @@ public class DevelopmentDataSeederTests
         Guid existingOrganisationId;
         Guid otherOrganisationId;
         Guid otherClientId;
+        Guid otherWorkerId;
 
         using (var scope = factory.Services.CreateScope())
         {
@@ -191,7 +208,11 @@ public class DevelopmentDataSeederTests
             var manualClient = Client.Create(existingOrganisationId, "Manually added client");
             var otherClient = Client.Create(otherOrganisationId, "Independent client");
             otherClientId = otherClient.Id;
-            database.AddRange(existingClient, manualClient, otherClient);
+            var existingWorker = Worker.Create(existingOrganisationId, "AARON BROOKS");
+            var manualWorker = Worker.Create(existingOrganisationId, "Manually added worker");
+            var otherWorker = Worker.Create(otherOrganisationId, "Independent worker");
+            otherWorkerId = otherWorker.Id;
+            database.AddRange(existingClient, manualClient, otherClient, existingWorker, manualWorker, otherWorker);
             await database.SaveChangesAsync(cancellationToken);
 
             var seed = await CreateSeeder(scope.ServiceProvider).SeedAsync(cancellationToken);
@@ -200,6 +221,14 @@ public class DevelopmentDataSeederTests
             Assert.Equal(existingOrganisationId, largeOrganisation.OrganisationId);
             Assert.Equal(44, largeOrganisation.AddedClientCount);
             Assert.Equal(46, largeOrganisation.TotalClientCount);
+            Assert.Equal(44, largeOrganisation.AddedWorkerCount);
+            Assert.Equal(46, largeOrganisation.TotalWorkerCount);
+            Assert.True(await database.Workers.AnyAsync(worker => worker.Id == existingWorker.Id, cancellationToken));
+            Assert.True(await database.Workers.AnyAsync(worker => worker.Id == manualWorker.Id, cancellationToken));
+            Assert.Equal("AARON BROOKS", (await database.Workers.AsNoTracking()
+                .SingleAsync(worker => worker.Id == existingWorker.Id, cancellationToken)).Name);
+            Assert.Equal(1, await database.Workers.CountAsync(
+                worker => worker.OrganisationId == otherOrganisationId, cancellationToken));
             Assert.True(await database.Clients.AnyAsync(client => client.Id == existingClient.Id, cancellationToken));
             Assert.True(await database.Clients.AnyAsync(client => client.Id == manualClient.Id, cancellationToken));
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -212,6 +241,7 @@ public class DevelopmentDataSeederTests
             var reset = await CreateSeeder(resetScope.ServiceProvider).ResetAsync(cancellationToken);
             Assert.Equal(3, reset.OrganisationCount);
             Assert.Equal(49, reset.ClientCount);
+            Assert.Equal(49, reset.WorkerCount);
         }
 
         using var verificationScope = factory.Services.CreateScope();
@@ -220,6 +250,7 @@ public class DevelopmentDataSeederTests
         Assert.Equal(otherUserId, (await verificationDatabase.Users.SingleAsync(cancellationToken)).Id);
         Assert.Equal(otherOrganisationId, (await verificationDatabase.Organisations.SingleAsync(cancellationToken)).Id);
         Assert.Equal(otherClientId, (await verificationDatabase.Clients.SingleAsync(cancellationToken)).Id);
+        Assert.Equal(otherWorkerId, (await verificationDatabase.Workers.SingleAsync(cancellationToken)).Id);
     }
 
     [Theory]
@@ -265,6 +296,7 @@ public class DevelopmentDataSeederTests
         using var verificationScope = factory.Services.CreateScope();
         var verificationDatabase = verificationScope.ServiceProvider.GetRequiredService<EngageOpsDbContext>();
         Assert.Equal(48, await verificationDatabase.Clients.CountAsync(cancellationToken));
+        Assert.Equal(48, await verificationDatabase.Workers.CountAsync(cancellationToken));
         Assert.Equal(sharedOrganisation ? 3 : 4, await verificationDatabase.Organisations.CountAsync(cancellationToken));
         Assert.Equal(sharedOrganisation ? 2 : 1, await verificationDatabase.Users.CountAsync(cancellationToken));
         Assert.Equal(4, await verificationDatabase.OrganisationMemberships.CountAsync(cancellationToken));

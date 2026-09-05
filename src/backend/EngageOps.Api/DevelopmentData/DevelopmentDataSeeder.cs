@@ -52,22 +52,35 @@ public sealed class DevelopmentDataSeeder(
             var organisation = organisations.SingleOrDefault(candidate => candidate.Name == data.Name)
                 ?? await organisationProvisioner.ProvisionAsync(user.Id, data.Name, cancellationToken)
                 ?? throw new InvalidOperationException("The development organisation could not be created.");
-            var existingNames = await context.Clients
+            var existingClientNames = await context.Clients
                 .Where(client => client.OrganisationId == organisation.Id)
                 .Select(client => client.Name)
                 .ToListAsync(cancellationToken);
-            var existingNameSet = existingNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var existingClientNameSet = existingClientNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var clients = data.ClientNames
-                .Where(name => !existingNameSet.Contains(name))
+                .Where(name => !existingClientNameSet.Contains(name))
                 .Select(name => Client.Create(organisation.Id, name))
                 .ToArray();
 
             context.Clients.AddRange(clients);
+            var existingWorkerNames = await context.Workers
+                .Where(worker => worker.OrganisationId == organisation.Id)
+                .Select(worker => worker.Name)
+                .ToListAsync(cancellationToken);
+            var existingWorkerNameSet = existingWorkerNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var workers = data.WorkerNames
+                .Where(name => !existingWorkerNameSet.Contains(name))
+                .Select(name => Worker.Create(organisation.Id, name))
+                .ToArray();
+
+            context.Workers.AddRange(workers);
             results.Add(new DevelopmentOrganisationSeedResult(
                 organisation.Id,
                 organisation.Name,
                 clients.Length,
-                existingNames.Count + clients.Length));
+                existingClientNames.Count + clients.Length,
+                workers.Length,
+                existingWorkerNames.Count + workers.Length));
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -178,7 +191,9 @@ public sealed record DevelopmentOrganisationSeedResult(
     Guid OrganisationId,
     string Name,
     int AddedClientCount,
-    int TotalClientCount);
+    int TotalClientCount,
+    int AddedWorkerCount,
+    int TotalWorkerCount);
 
 public sealed record DevelopmentDataResetResult(
     int OrganisationCount,

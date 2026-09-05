@@ -1,11 +1,13 @@
 import { Link } from 'react-router'
 
 interface OrganisationBreadcrumbProps {
+  organisationId: string
   currentPage: string
   organisationName: string | undefined
 }
 
 export function OrganisationBreadcrumb({
+  organisationId,
   currentPage,
   organisationName,
 }: OrganisationBreadcrumbProps) {
@@ -24,9 +26,12 @@ export function OrganisationBreadcrumb({
           <span aria-hidden="true" className="text-slate-300">
             /
           </span>
-          <span className="min-w-0 font-medium break-words text-ink">
+          <Link
+            to={`/organisations/${encodeURIComponent(organisationId)}`}
+            className="inline-flex min-h-11 min-w-0 items-center rounded-control font-medium break-words text-brand-700 hover:text-brand-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
+          >
             {organisationName ?? 'Organisation'}
-          </span>
+          </Link>
         </li>
         <li className="flex max-w-full min-w-0 items-center gap-2">
           <span aria-hidden="true" className="text-slate-300">

@@ -4,7 +4,9 @@ import { Wordmark } from './components/Wordmark'
 import { SessionStatus } from './features/auth/SessionStatus'
 import { useSession } from './features/auth/useSession'
 import { ClientsPage } from './features/clients/ClientsPage'
+import { OrganisationOverviewPage } from './features/organisations/OrganisationOverviewPage'
 import { OrganisationsPage } from './features/organisations/OrganisationsPage'
+import { WorkersPage } from './features/workers/WorkersPage'
 
 function App() {
   const session = useSession()
@@ -37,8 +39,16 @@ function App() {
             element={<OrganisationsPage userId={session.data.userId} />}
           />
           <Route
+            path="organisations/:organisationId"
+            element={<OrganisationOverviewPage userId={session.data.userId} />}
+          />
+          <Route
             path="organisations/:organisationId/clients"
             element={<ClientsPage userId={session.data.userId} />}
+          />
+          <Route
+            path="organisations/:organisationId/workers"
+            element={<WorkersPage userId={session.data.userId} />}
           />
           <Route path="*" element={<Navigate replace to="/organisations" />} />
         </Route>

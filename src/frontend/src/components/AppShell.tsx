@@ -1,5 +1,6 @@
-import { FiAlertCircle, FiBriefcase, FiLogOut, FiUsers } from 'react-icons/fi'
-import { NavLink, Outlet, useMatch } from 'react-router'
+import { FiAlertCircle, FiLogOut } from 'react-icons/fi'
+import { Outlet, useMatch } from 'react-router'
+import { OrganisationNavigation } from '../features/organisations/OrganisationNavigation'
 import type { Session } from '../features/auth/api'
 import { useSignOut } from '../features/auth/useSignOut'
 import { Wordmark } from './Wordmark'
@@ -55,40 +56,10 @@ export function AppShell({ session }: AppShellProps) {
 
       <div className="mx-auto flex min-h-[calc(100vh-4.5rem)] w-full max-w-7xl flex-col lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="border-b border-line bg-surface lg:border-r lg:border-b-0">
-          <nav
-            aria-label="Primary"
-            className="flex gap-1 px-5 py-3 sm:px-8 lg:flex-col lg:p-5"
-          >
-            <NavLink
-              className={({ isActive }) =>
-                `flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 ${
-                  isActive
-                    ? 'bg-blue-50 text-brand-700'
-                    : 'text-muted hover:bg-slate-100 hover:text-ink'
-                }`
-              }
-              end
-              to="/organisations"
-            >
-              <FiBriefcase aria-hidden="true" className="size-4" />
-              Organisations
-            </NavLink>
-            {organisationId && (
-              <NavLink
-                className={({ isActive }) =>
-                  `flex min-h-11 items-center gap-3 rounded-control px-3.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 ${
-                    isActive
-                      ? 'bg-blue-50 text-brand-700'
-                      : 'text-muted hover:bg-slate-100 hover:text-ink'
-                  }`
-                }
-                to={`/organisations/${encodeURIComponent(organisationId)}/clients`}
-              >
-                <FiUsers aria-hidden="true" className="size-4" />
-                Clients
-              </NavLink>
-            )}
-          </nav>
+          <OrganisationNavigation
+            userId={session.userId}
+            organisationId={organisationId}
+          />
         </aside>
 
         <main className="min-w-0 flex-1 px-5 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">

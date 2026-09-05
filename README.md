@@ -2,16 +2,16 @@
 
 EngageOps is an independently designed, multi-tenant workforce operations application.
 It manages organisations, clients, workers and assignments through an ASP.NET Core
-API, with a React workspace for organisation access and client management.
+API, with a React workspace for organisation access and client/worker management.
 
 ## Implemented functionality
 
 | Area           | API                                                                           | Browser workspace                                                 |
 | -------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Authentication | Registration, cookie sign-in, session lookup, sign-out and antiforgery tokens | Sign-in, session handling and sign-out                            |
-| Organisations  | Account/organisation provisioning and membership-scoped listing               | List accessible organisations and enter a client workspace        |
+| Organisations  | Account/organisation provisioning and membership-scoped listing               | Organisation picker, workspace overview, client/worker totals and switching |
 | Clients        | Organisation-scoped creation and paginated listing                            | Inline creation, paginated listing and loading/empty/error states |
-| Workers        | Organisation-scoped creation and paginated listing                            | API only                                                          |
+| Workers        | Organisation-scoped creation and paginated listing                            | Inline creation, paginated listing and loading/empty/error states |
 | Assignments    | Creation, paginated listing, detail and cancellation                          | API only                                                          |
 
 Assignments link a worker and client within the same organisation, with a start date,
@@ -34,7 +34,7 @@ feature folders for the implemented browser workflows.
 The local workflow supports Windows (PowerShell) and macOS/Linux (a standard shell)
 with Docker running Linux containers. Follow [Local development](docs/local-development.md)
 to configure and start the Compose services, then use [Local demo data](docs/development-data.md) to seed an
-account with empty, small and paginated client lists. The browser workspace runs at
+account with empty, small and paginated client and worker lists. The browser workspace runs at
 <http://localhost:5173>.
 
 ## Documentation

@@ -1,4 +1,4 @@
-import { clientsPath, expect, signIn, test } from './fixtures.ts'
+import { expect, signIn, test } from './fixtures.ts'
 import { holdNextRequest, unavailableResponse } from './network.ts'
 
 test('protects direct links and validates sign-in with keyboard and password visibility', async ({
@@ -58,7 +58,7 @@ test('signs in through real cookies and CSRF, survives reload, and signs out', a
   }
   await expect(
     page.getByRole('link', {
-      name: `View clients for ${account.organisationName}`,
+      name: `Open workspace for ${account.organisationName}`,
     }),
   ).toBeVisible()
   await page.reload()
@@ -66,7 +66,13 @@ test('signs in through real cookies and CSRF, survives reload, and signs out', a
     page.getByRole('heading', { name: 'Organisations', exact: true }),
   ).toBeVisible()
   await page
-    .getByRole('link', { name: `View clients for ${account.organisationName}` })
+    .getByRole('link', {
+      name: `Open workspace for ${account.organisationName}`,
+    })
+    .click()
+  await page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('link', { name: 'Clients', exact: true })
     .click()
   await expect(
     page.getByRole('heading', { name: 'No clients yet' }),
@@ -185,9 +191,11 @@ test('an expired cookie hides the workspace after a protected request', async ({
 }) => {
   await page.context().clearCookies({ name: 'EngageOps.Authentication' })
   await page
-    .getByRole('link', { name: `View clients for ${account.organisationName}` })
+    .getByRole('link', {
+      name: `Open workspace for ${account.organisationName}`,
+    })
     .click()
-  await expect(page).toHaveURL(clientsPath(account))
+  await expect(page).toHaveURL(`/organisations/${account.organisationId}`)
   await expect(
     page.getByRole('heading', { name: 'Welcome back' }),
   ).toBeVisible()

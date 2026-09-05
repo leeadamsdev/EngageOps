@@ -75,7 +75,7 @@ pnpm build
 test feedback, use `pnpm test:watch`.
 
 Vitest and React Testing Library cover session/sign-in/sign-out behaviour,
-organisation access, client pagination and creation, field validation, retries,
+organisation access, client/worker pagination and creation, field validation, retries,
 expired sessions, cached-data visibility and focus restoration. Shared test setup
 provides DOM matchers and cleanup; test query clients disable automatic retries.
 
@@ -115,8 +115,8 @@ for browser tests. The development stack can remain running on its usual ports.
 
 Each invocation has a unique Compose project and an anonymous database volume.
 Fixtures register fresh accounts/organisations through the real API and create
-only the clients a test needs. No shared authentication state file or demo account
-is used. Teardown removes the invocation's containers,
+only the clients and workers a test needs. No shared authentication state file or
+demo account is used. Teardown removes the invocation's containers,
 network and database volume after successful or failed runs. Do not run two browser
 suite invocations simultaneously because they share the dedicated test ports.
 
@@ -129,8 +129,12 @@ viewports, not physical-device certification. Coverage includes:
 - Session/network/server failures, retry and expired authentication.
 - Organisation listing, navigation, breadcrumbs, deep links, empty/loading/error states,
   inaccessible tenants and cached-data isolation when switching accounts.
-- Client creation, validation, cancellation, pending controls, input preservation,
+- Organisation overview totals, empty summaries, updates after client/worker creation,
+  workspace entry and switching, failed totals, expired sessions and tenant isolation.
+- Client and worker creation, validation, cancellation, pending controls, input preservation,
   success/focus feedback, persistence and CSRF rejection.
+- Draft and pending-creation preservation through failed background list refreshes,
+  with form removal when authentication or organisation access is lost.
 - Pagination across 45 records, ordering, boundaries, failed-page retry and
   invalidation of cached pages after creation.
 - axe WCAG A/AA scans of sign-in, validation, workspace, empty/form/populated states;
@@ -139,12 +143,13 @@ viewports, not physical-device certification. Coverage includes:
 Happy-path, persistence and tenant/security journeys use the real API/database.
 `page.route` is limited to deterministic loading/failure responses and the
 organisation-empty state, which registration cannot create. Browser tests complement
-the existing component and backend suites; API-only workers/assignments and detailed
+the existing component and backend suites; API-only assignments and detailed
 database/domain constraints remain covered by backend tests.
 
 Pagination checks cover retained rows, loading announcements, prevention of repeated
 navigation and keyboard focus/scroll stability, including the first and last pages.
-Long organisation and client names are checked for wrapping without clipping at 320px.
+Long organisation, client and worker names are checked for wrapping without clipping
+at 320px.
 Automated accessibility scans do not establish full accessibility, and no visual
 screenshot baselines are committed.
 

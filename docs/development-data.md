@@ -2,17 +2,17 @@
 
 EngageOps uses one development account with three organisations:
 
-| Organisation             | Clients | Purpose                                                     |
-| ------------------------ | ------: | ----------------------------------------------------------- |
-| Northstar Demo Workforce |      45 | Larger client list: three pages at the UI's page size of 20 |
-| Cedar Demo Workforce     |       3 | Small populated list                                        |
-| Newhaven Demo Workforce  |       0 | Empty state and adding a first client                       |
+| Organisation             | Clients | Workers | Purpose                                                       |
+| ------------------------ | ------: | ------: | ------------------------------------------------------------- |
+| Northstar Demo Workforce |      45 |      45 | Larger lists: three pages at the UI's page size of 20           |
+| Cedar Demo Workforce     |       3 |       3 | Small populated lists                                         |
+| Newhaven Demo Workforce  |       0 |       0 | Empty states and adding a first client or worker               |
 
 The account defaults to `demo@engageops.local` with password `LocalDevelopment1!`.
 Set `DEVELOPMENT_DATA_EMAIL` and `DEVELOPMENT_DATA_PASSWORD` in the local `.env`
 file to change these defaults. They are local development credentials only.
 
-Organisation names and client datasets have one owner:
+Organisation names and client/worker datasets have one owner:
 [`DevelopmentDataCatalog.cs`](../src/backend/EngageOps.Api/DevelopmentData/DevelopmentDataCatalog.cs).
 
 ## Seed
@@ -40,9 +40,9 @@ For initial setup, copy `.env.example` to `.env`, set the database password, the
 `docker compose up --build --watch`. Open `http://localhost:5173` after seeding.
 
 Seeding creates the account and its organisation memberships as needed. Existing
-accounts keep their password. Repeating the command adds missing clients without
+accounts keep their password. Repeating the command adds missing clients and workers without
 duplicating names, including case-only differences. Existing records and manually
-added clients are preserved, so counts can grow beyond the baseline above.
+added clients and workers are preserved, so counts can grow beyond the baseline above.
 
 Run seed/reset commands one at a time. They run only in the Development environment
 and apply outstanding migrations before operating. Starting the API alone does not

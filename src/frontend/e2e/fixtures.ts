@@ -53,18 +53,39 @@ export function clientsPath(account: Account) {
   return `/organisations/${account.organisationId}/clients`
 }
 
-export async function seedClients(
+export function workersPath(account: Account) {
+  return `/organisations/${account.organisationId}/workers`
+}
+
+export function seedClients(
   request: APIRequestContext,
   account: Account,
+  count: number,
+) {
+  return seedNames(request, clientsPath(account), 'Client', count)
+}
+
+export function seedWorkers(
+  request: APIRequestContext,
+  account: Account,
+  count: number,
+) {
+  return seedNames(request, workersPath(account), 'Worker', count)
+}
+
+async function seedNames(
+  request: APIRequestContext,
+  path: string,
+  prefix: string,
   count: number,
 ) {
   const headers = await csrfHeaders(request)
   const names = Array.from(
     { length: count },
-    (_, index) => `Client ${String(index + 1).padStart(2, '0')}`,
+    (_, index) => `${prefix} ${String(index + 1).padStart(2, '0')}`,
   )
   for (const name of names) {
-    const response = await request.post(`/api${clientsPath(account)}`, {
+    const response = await request.post(`/api${path}`, {
       headers,
       data: { name },
     })
@@ -84,7 +105,7 @@ export const test = base.extend<{ account: Account; authenticatedPage: Page }>({
     await page.goto('/organisations')
     await expect(
       page.getByRole('link', {
-        name: `View clients for ${account.organisationName}`,
+        name: `Open workspace for ${account.organisationName}`,
       }),
     ).toBeVisible()
     await use(page)

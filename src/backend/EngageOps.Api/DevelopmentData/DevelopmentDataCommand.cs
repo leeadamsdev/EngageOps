@@ -41,13 +41,16 @@ internal static partial class DevelopmentDataLog
         EventId = 1,
         Level = LogLevel.Information,
         Message = "Development data is ready for {Email} in {OrganisationName}. " +
-            "Added {AddedClientCount} clients; {TotalClientCount} are available.")]
+            "Added {AddedClientCount} clients; {TotalClientCount} clients are available. " +
+            "Added {AddedWorkerCount} workers; {TotalWorkerCount} workers are available.")]
     public static partial void SeedReady(
         ILogger logger,
         string email,
         string organisationName,
         int addedClientCount,
-        int totalClientCount);
+        int totalClientCount,
+        int addedWorkerCount,
+        int totalWorkerCount);
 
     [LoggerMessage(
         EventId = 2,

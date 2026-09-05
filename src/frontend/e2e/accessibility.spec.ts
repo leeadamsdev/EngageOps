@@ -6,8 +6,105 @@ import {
   expect,
   registerAccount,
   seedClients,
+  seedWorkers,
+  workersPath,
   test,
 } from './fixtures.ts'
+
+test('organisation overview and workspace navigation remain accessible with long names', async ({
+  page,
+  request,
+}, testInfo) => {
+  const organisationName =
+    'Northstar International Workforce Operations and Consulting'
+  const account = await registerAccount(request, organisationName)
+  await seedClients(request, account, 21)
+  await seedWorkers(request, account, 3)
+  await page.context().addCookies((await request.storageState()).cookies)
+  await page.goto(`/organisations/${account.organisationId}`)
+  await expect(
+    page.getByRole('heading', { name: organisationName }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'View clients, 21 total' }),
+  ).toBeVisible()
+  await checkAccessibility(page)
+  await page.screenshot({
+    path: testInfo.outputPath('overview.png'),
+    fullPage: true,
+  })
+  await page.setViewportSize({ width: 320, height: 800 })
+  await checkAccessibility(page)
+  for (const name of ['Overview', 'Clients', 'Workers']) {
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Primary' })
+        .getByRole('link', { name, exact: true }),
+    ).toBeInViewport()
+  }
+  await page.screenshot({
+    path: testInfo.outputPath('overview-narrow.png'),
+    fullPage: true,
+  })
+})
+
+test('worker empty state, validation and paginated long names fit narrow screens and remain accessible', async ({
+  authenticatedPage: page,
+  account,
+  request,
+}, testInfo) => {
+  await page.goto(workersPath(account))
+  await expect(
+    page.getByRole('heading', { name: 'No workers yet' }),
+  ).toBeVisible()
+  await checkAccessibility(page)
+  await page.getByRole('button', { name: 'Add worker', exact: true }).click()
+  await page.getByLabel('Worker name').press('Enter')
+  await expect(page.getByLabel('Worker name')).toBeFocused()
+  await expect(page.getByLabel('Worker name')).toHaveAccessibleDescription(
+    'Enter a worker name',
+  )
+  await checkAccessibility(page)
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await seedWorkers(request, account, 21)
+  const longName = 'A'.repeat(200)
+  const response = await request.post(`/api${workersPath(account)}`, {
+    headers: await csrfHeaders(request),
+    data: { name: longName },
+  })
+  expect(response.status()).toBe(201)
+  await page.reload()
+  const name = page.getByText(longName, { exact: true })
+  await expect(name).toBeVisible()
+  await checkAccessibility(page)
+  await page.screenshot({
+    path: testInfo.outputPath('workers.png'),
+    fullPage: true,
+  })
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(
+    await name.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth,
+    ),
+  ).toBe(true)
+  await checkAccessibility(page)
+  await page.getByRole('button', { name: 'Add worker', exact: true }).click()
+  await expect(page.getByLabel('Worker name')).toBeFocused()
+  await checkAccessibility(page)
+  await page.screenshot({
+    path: testInfo.outputPath('workers-narrow-form.png'),
+    fullPage: true,
+  })
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+  const pagination = page.getByRole('navigation', { name: 'Worker pages' })
+  const next = pagination.getByRole('button', { name: 'Next', exact: true })
+  await next.focus()
+  await page.keyboard.press('Enter')
+  await expect(pagination).toContainText('Page 2 of 2')
+  await expect(next).toBeFocused()
+  await expect(next).toBeInViewport()
+  await checkAccessibility(page)
+})
 
 async function checkAccessibility(page: Page) {
   // Scan settled content; entrance opacity otherwise produces transient contrast failures.
@@ -84,7 +181,11 @@ test('long organisation and client names wrap without clipping on narrow screens
   ).toBe(true)
   await checkAccessibility(page)
   await page
-    .getByRole('link', { name: `View clients for ${organisationName}` })
+    .getByRole('link', { name: `Open workspace for ${organisationName}` })
+    .click()
+  await page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('link', { name: 'Clients', exact: true })
     .click()
   await expect(
     page.getByText('Manage this organisation’s clients.', { exact: true }),

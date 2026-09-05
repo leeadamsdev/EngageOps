@@ -48,10 +48,10 @@ describe('OrganisationsPage', () => {
       screen.getByRole('list', { name: 'Organisations' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'View clients for Alpha Staffing' }),
+      screen.getByRole('link', { name: 'Open workspace for Alpha Staffing' }),
     ).toHaveAttribute(
       'href',
-      '/organisations/01990db2-4a3f-7d35-a2bd-6b69ac9c75be/clients',
+      '/organisations/01990db2-4a3f-7d35-a2bd-6b69ac9c75be',
     )
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/organisations',
