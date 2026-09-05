@@ -8,15 +8,17 @@ Playwright browser tests live in [`src/frontend/e2e`](../src/frontend/e2e).
 ## Prerequisites
 
 Use the host tool versions listed in [Local development](local-development.md#prerequisites).
+Common commands below work in PowerShell on Windows and a standard shell on
+macOS/Linux. Shell-specific cleanup is shown separately.
 Restore dependencies from the repository root:
 
-```powershell
+```text
 dotnet restore EngageOps.slnx
 ```
 
 From `src/frontend`:
 
-```powershell
+```text
 pnpm install --frozen-lockfile
 ```
 
@@ -32,7 +34,7 @@ or PostgreSQL.
 
 Run from the repository root:
 
-```powershell
+```text
 dotnet format EngageOps.slnx --verify-no-changes
 dotnet build EngageOps.slnx
 dotnet test --solution EngageOps.slnx
@@ -61,7 +63,7 @@ assertions. Database tests use real PostgreSQL constraints and migrations.
 
 Run from `src/frontend`:
 
-```powershell
+```text
 pnpm format:check
 pnpm lint
 pnpm typecheck
@@ -88,7 +90,7 @@ for those checks.
 
 With Docker running, use these commands from `src/frontend`:
 
-```powershell
+```text
 pnpm exec playwright install chromium firefox webkit
 pnpm test:e2e
 ```
@@ -98,6 +100,10 @@ On Linux, install browser system dependencies too:
 ```sh
 pnpm exec playwright install --with-deps chromium firefox webkit
 ```
+
+Use an OS version supported by the pinned Playwright release; see
+[Playwright system requirements](https://playwright.dev/docs/intro#system-requirements).
+Linux browser dependency installation may require administrator privileges.
 
 The suite builds the frontend and serves it through Vite preview on
 `http://127.0.0.1:15173`, proxying API requests to `http://127.0.0.1:18080`.
@@ -144,7 +150,7 @@ screenshot baselines are committed.
 
 For targeted runs and debugging:
 
-```powershell
+```text
 pnpm test:e2e --project=chromium
 pnpm test:e2e e2e/clients.spec.ts --project=chromium --headed
 pnpm test:e2e:ui
@@ -160,12 +166,27 @@ formatting, lint and Docker builds. Open traces from the HTML report or with
 If the runner is forcibly terminated before teardown, remove only the recorded test
 project from the repository root:
 
+Windows / PowerShell:
+
 ```powershell
 $testProject = (Get-Content src/frontend/e2e-artifacts/compose-project.txt -Raw).Trim()
 if ($testProject -notmatch '^engageops-e2e-[0-9a-f-]{36}$') {
     throw 'Unexpected browser test project name.'
 }
 docker compose -f compose.e2e.yaml -p $testProject down --volumes --remove-orphans
+```
+
+macOS/Linux shell (the subshell prevents an invalid project name from closing your terminal):
+
+```sh
+(
+    test_project=$(cat src/frontend/e2e-artifacts/compose-project.txt) || exit 1
+    if ! printf '%s\n' "$test_project" | LC_ALL=C grep -Eq '^engageops-e2e-[0-9a-f-]{36}$'; then
+        printf 'Unexpected browser test project name.\n' >&2
+        exit 1
+    fi
+    docker compose -f compose.e2e.yaml -p "$test_project" down --volumes --remove-orphans
+)
 ```
 
 After upgrading Playwright, rerun its browser installation command. Browser tests
@@ -176,28 +197,29 @@ only the colocated Vitest suite.
 
 Run from the repository root with `.env` configured:
 
-```powershell
+```text
 docker compose config --quiet
+docker compose -f compose.e2e.yaml config --quiet
 docker compose ps
 ```
 
-The first command validates configuration without printing interpolated values.
-The second shows service state; it does not build or start services. PostgreSQL has
-a container health check. The API's `/health` endpoint checks application liveness,
+The configuration commands validate both Compose files without printing interpolated
+values. `docker compose ps` shows service state; it does not build or start services.
+PostgreSQL has a container health check. The API's `/health` endpoint checks application liveness,
 so verify an affected API workflow as well when checking database-backed behaviour.
 
 ## Dependency checks
 
 When changing dependencies, run from the repository root:
 
-```powershell
+```text
 dotnet package list --outdated
 dotnet package list --vulnerable
 ```
 
 From `src/frontend`:
 
-```powershell
+```text
 pnpm outdated
 pnpm audit
 ```
@@ -206,11 +228,17 @@ pnpm audit
 
 [`ci.yml`](../.github/workflows/ci.yml) runs on pushes and pull requests to `main`:
 
+- POSIX shell syntax validation for the development-data entry point.
 - Backend restore, formatting verification, Release build and tests.
 - Compose configuration validation and backend/frontend Docker image builds.
 - Frontend frozen-lockfile installation, formatting, lint, tests and build.
 - Browser installation and the full Playwright matrix against a disposable stack,
   with one retry in CI and reports/diagnostics retained as artifacts for seven days.
+
+These jobs run on Ubuntu and provide Linux validation. Windows is validated locally;
+there is no Windows or macOS CI matrix, and macOS has not been physically validated.
+The frontend job saves the shared pnpm store cache; the browser job only restores it
+to avoid competing cache writes. Cache misses still run a normal frozen-lockfile install.
 
 [`codeql.yml`](../.github/workflows/codeql.yml) scans C# and JavaScript/TypeScript on
 pushes/pull requests to `main` and weekly. The scheduled/manual

@@ -32,6 +32,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Validate development-data shell syntax
+        run: sh -n scripts/development-data.sh
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -88,14 +91,24 @@ jobs:
         uses: pnpm/setup@v2
         with:
           package-json-file: src/frontend/package.json
-          cache: true
-          cache-dependency-path: src/frontend/pnpm-lock.yaml
           install: false
 
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
+
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      # This job owns cache writes; browser journeys only restore the shared store.
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src/frontend/pnpm-lock.yaml', 'src/frontend/pnpm-workspace.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -129,14 +142,23 @@ jobs:
         uses: pnpm/setup@v2
         with:
           package-json-file: src/frontend/package.json
-          cache: true
-          cache-dependency-path: src/frontend/pnpm-lock.yaml
           install: false
 
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
+
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore pnpm store
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src/frontend/pnpm-lock.yaml', 'src/frontend/pnpm-workspace.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

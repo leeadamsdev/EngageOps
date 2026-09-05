@@ -19,9 +19,22 @@ Organisation names and client datasets have one owner:
 
 From the repository root, with the Compose services running from the current source:
 
+Windows / PowerShell:
+
 ```powershell
 ./scripts/development-data.ps1 seed
 ```
+
+macOS/Linux shell:
+
+```sh
+sh ./scripts/development-data.sh seed
+```
+
+Both scripts resolve the repository from their own location, so they also work when
+invoked by absolute path from another directory. They call the same backend command;
+all dataset and reset rules remain in the backend. See [Local development](local-development.md)
+for platform prerequisites.
 
 For initial setup, copy `.env.example` to `.env`, set the database password, then run
 `docker compose up --build --watch`. Open `http://localhost:5173` after seeding.
@@ -37,9 +50,18 @@ seed data.
 
 ## Reset
 
+Windows / PowerShell:
+
 ```powershell
 ./scripts/development-data.ps1 reset
 ./scripts/development-data.ps1 seed
+```
+
+macOS/Linux shell:
+
+```sh
+sh ./scripts/development-data.sh reset
+sh ./scripts/development-data.sh seed
 ```
 
 Reset removes all clients, workers and assignments in the configured account's
@@ -56,6 +78,13 @@ organisations with the same demo name. Seeding also rejects ambiguous names.
 The catalogue names identify the dataset. Keep them stable when extending it;
 renaming an organisation or changing the configured account email does not clean up
 its old data automatically. Inspect and explicitly scope any legacy-data cleanup.
+
+## Shell script permissions
+
+The `sh` commands above work without an executable bit. The script also has a
+`#!/bin/sh` shebang for direct execution as `./scripts/development-data.sh seed`.
+If your checkout does not mark it executable, run `chmod +x scripts/development-data.sh`
+on macOS/Linux. The repository's `.gitattributes` enforces LF line endings.
 
 ## Test fixtures
 

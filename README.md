@@ -31,8 +31,9 @@ feature folders for the implemented browser workflows.
 
 ## Run locally
 
-Follow [Local development](docs/local-development.md) to configure and start the
-Compose services, then use [Local demo data](docs/development-data.md) to seed an
+The local workflow supports Windows (PowerShell) and macOS/Linux (a standard shell)
+with Docker running Linux containers. Follow [Local development](docs/local-development.md)
+to configure and start the Compose services, then use [Local demo data](docs/development-data.md) to seed an
 account with empty, small and paginated client lists. The browser workspace runs at
 <http://localhost:5173>.
 

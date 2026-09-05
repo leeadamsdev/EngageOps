@@ -1,13 +1,21 @@
 # Local development
 
-Commands below use PowerShell and run from the repository root unless a different
-working directory is specified.
+The local workflow supports Windows, macOS and Linux. Commands run from the
+repository root unless a different working directory is specified. Common command
+blocks work in both PowerShell and a standard Unix shell; only shell-specific syntax
+is shown separately.
 
 ## Prerequisites
 
-The application runs through Docker Compose. Use a running Docker engine with Linux
-container support and Compose support for `develop.watch` and `initial_sync`.
-PowerShell runs the development-data script.
+The application runs through Docker Compose. Use Docker Desktop on Windows/macOS,
+or Docker Engine with the Compose plugin / Docker Desktop on Linux. Docker must run
+Linux containers, and Compose must support `develop.watch` and `initial_sync`.
+Use a current stable Compose release. The Docker CLI must be on `PATH` and
+able to contact the daemon without changing the documented commands to use `sudo`.
+
+Development-data commands have thin PowerShell and POSIX `sh` entry points. Use
+PowerShell on Windows (PowerShell 7 or Windows PowerShell 5.1), or the system shell
+on macOS/Linux. PowerShell 7 can also run the `.ps1` entry point on macOS/Linux.
 
 For host-side builds, tests and EF tooling, install the versions selected by the
 repository:
@@ -24,10 +32,18 @@ the tools above even when the application is running in containers.
 
 ## Initial setup
 
-Create the local environment file if it does not already exist:
+Create the local environment file if it does not already exist.
+
+Windows / PowerShell:
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+macOS/Linux shell:
+
+```sh
+if [ ! -e .env ]; then cp .env.example .env; fi
 ```
 
 Edit `.env` and set `POSTGRES_PASSWORD`. The database name and user are supplied by
@@ -36,7 +52,7 @@ the configuration keys.
 
 Validate the configuration, then build and start the services:
 
-```powershell
+```text
 docker compose config --quiet
 docker compose up --build --watch
 ```
@@ -65,7 +81,7 @@ rebuilds images when the listed project/dependency files change. See
 
 Inspect services and recent output:
 
-```powershell
+```text
 docker compose ps
 docker compose logs --tail 100 backend frontend postgres
 ```
@@ -76,13 +92,13 @@ input changes, restart with `--build`.
 
 To run without source watching:
 
-```powershell
+```text
 docker compose up -d --build
 ```
 
 To stop and remove the containers while retaining named volumes:
 
-```powershell
+```text
 docker compose down
 ```
 
@@ -112,11 +128,29 @@ Mappings live beside their feature entities. Migrations and the model snapshot l
 in [`Persistence/Migrations`](../src/backend/EngageOps.Api/Persistence/Migrations).
 
 For a model change, restore the pinned EF tool and configure a connection in the
-current PowerShell session. Replace the placeholders with the local `.env` values:
+current terminal session. Restore the tool using the same command on all platforms:
+
+```text
+dotnet tool restore
+```
+
+Set the connection string, replacing the placeholders with the local `.env` values.
+
+Windows / PowerShell:
 
 ```powershell
-dotnet tool restore
 $env:ConnectionStrings__Database = 'Host=localhost;Port=5432;Database=<POSTGRES_DB>;Username=<POSTGRES_USER>;Password=<POSTGRES_PASSWORD>'
+```
+
+macOS/Linux shell:
+
+```sh
+export ConnectionStrings__Database='Host=localhost;Port=5432;Database=<POSTGRES_DB>;Username=<POSTGRES_USER>;Password=<POSTGRES_PASSWORD>'
+```
+
+Then create the migration:
+
+```text
 dotnet ef migrations add DescribeSchemaChange --project src/backend/EngageOps.Api --output-dir Persistence/Migrations
 ```
 
