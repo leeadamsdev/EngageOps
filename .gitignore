@@ -16,6 +16,9 @@
 # Node / frontend
 **/node_modules/
 **/dist/
+**/playwright-report/
+**/test-results/
+**/e2e-artifacts/
 
 # Logs
 *.log

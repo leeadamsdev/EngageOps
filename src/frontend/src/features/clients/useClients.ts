@@ -14,6 +14,12 @@ export function useClients(
   const clients = useQuery({
     queryKey: [...clientsQueryKey(userId, organisationId), page],
     queryFn: ({ signal }) => getClients(organisationId, page, signal),
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.state.status === 'success' &&
+      previousQuery.queryKey[1] === userId &&
+      previousQuery.queryKey[2] === organisationId
+        ? previousData
+        : undefined,
     retry: false,
   })
 

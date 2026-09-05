@@ -111,3 +111,49 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  browser:
+    name: Browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: src/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/setup@v2
+        with:
+          package-json-file: src/frontend/package.json
+          cache: true
+          cache-dependency-path: src/frontend/pnpm-lock.yaml
+          install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Run browser journeys
+        run: pnpm test:e2e
+
+      - name: Upload browser report and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results
+          path: |
+            src/frontend/playwright-report/
+            src/frontend/test-results/
+            src/frontend/e2e-artifacts/
+          retention-days: 7

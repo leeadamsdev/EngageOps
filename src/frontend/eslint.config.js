@@ -13,7 +13,7 @@ const typeAware = [
 ]
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'playwright-report', 'test-results', 'e2e-artifacts']),
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [
@@ -30,7 +30,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['vite.config.ts'],
+    files: ['vite.config.ts', 'playwright.config.ts', 'e2e/**/*.ts'],
     extends: typeAware,
     languageOptions: {
       globals: globals.node,

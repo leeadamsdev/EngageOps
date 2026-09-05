@@ -81,8 +81,8 @@ function ClientsContent({ userId, organisationId }: ClientsContentProps) {
       />
 
       <div className="mt-5 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.12em] text-brand-700 uppercase">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-[0.12em] wrap-anywhere text-brand-700 uppercase">
             {organisation?.name ?? 'Organisation'}
           </p>
           <h1
@@ -92,9 +92,7 @@ function ClientsContent({ userId, organisationId }: ClientsContentProps) {
             Clients
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            {organisation
-              ? `View the clients managed by ${organisation.name}.`
-              : 'View the clients managed by this organisation.'}
+            Manage this organisation’s clients.
           </p>
         </div>
 
@@ -128,7 +126,7 @@ function ClientsContent({ userId, organisationId }: ClientsContentProps) {
 
       {successMessage && (
         <p
-          className="mt-8 flex items-center gap-2 rounded-control border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          className="mt-8 flex items-center gap-2 rounded-control border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm wrap-anywhere text-emerald-800"
           role="status"
         >
           <FiCheckCircle aria-hidden="true" className="size-4 shrink-0" />
@@ -157,6 +155,8 @@ function ClientsContent({ userId, organisationId }: ClientsContentProps) {
         {clients.isSuccess && clients.data.totalCount > 0 && (
           <ClientList
             clientPage={clients.data}
+            requestedPage={page}
+            isFetching={clients.isFetching}
             onNextPage={() => {
               setPage((current) => current + 1)
             }}
@@ -172,16 +172,34 @@ function ClientsContent({ userId, organisationId }: ClientsContentProps) {
 
 interface ClientListProps {
   clientPage: ClientPage
+  requestedPage: number
+  isFetching: boolean
   onNextPage: () => void
   onPreviousPage: () => void
 }
 
 function ClientList({
   clientPage,
+  requestedPage,
+  isFetching,
   onNextPage,
   onPreviousPage,
 }: ClientListProps) {
   const totalPages = Math.ceil(clientPage.totalCount / clientsPageSize)
+  // Keep unavailable controls focusable through loading and page boundaries; guard their actions below.
+  const previousUnavailable = isFetching || clientPage.page === 1
+  const nextUnavailable = isFetching || clientPage.page >= totalPages
+  const pagination = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const focused = document.activeElement
+    if (
+      focused instanceof HTMLElement &&
+      pagination.current?.contains(focused)
+    ) {
+      focused.scrollIntoView({ block: 'nearest' })
+    }
+  }, [clientPage.page])
 
   return (
     <div className="overflow-hidden rounded-panel border border-line bg-surface shadow-panel">
@@ -192,7 +210,11 @@ function ClientList({
         </span>
       </div>
 
-      <ul aria-label="Clients" className="divide-y divide-line">
+      <ul
+        aria-label="Clients"
+        aria-busy={isFetching}
+        className="divide-y divide-line"
+      >
         {clientPage.items.map((client) => (
           <li
             className="flex items-center gap-4 px-5 py-5 sm:px-6"
@@ -202,7 +224,7 @@ function ClientList({
               <FiUsers aria-hidden="true" className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-ink">
+              <p className="text-base font-semibold wrap-anywhere text-ink">
                 {client.name}
               </p>
               <p className="mt-1 text-sm text-muted">Client</p>
@@ -213,26 +235,37 @@ function ClientList({
 
       {totalPages > 1 && (
         <nav
+          ref={pagination}
           aria-label="Client pages"
           className="grid grid-cols-2 items-center gap-3 border-t border-line px-5 py-4 sm:flex sm:justify-between sm:gap-4 sm:px-6"
         >
           <button
-            className="row-start-2 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-line bg-surface px-3.5 text-sm font-semibold text-ink transition-colors duration-200 hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 disabled:cursor-not-allowed disabled:text-muted sm:w-auto"
+            className="row-start-2 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-line bg-surface px-3.5 text-sm font-semibold text-ink transition-colors duration-200 hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 aria-disabled:cursor-not-allowed aria-disabled:text-muted sm:w-auto"
             type="button"
-            disabled={clientPage.page === 1}
-            onClick={onPreviousPage}
+            aria-disabled={previousUnavailable}
+            onClick={() => {
+              if (!previousUnavailable) onPreviousPage()
+            }}
           >
             <FiChevronLeft aria-hidden="true" className="size-4" />
             Previous
           </button>
-          <p className="col-span-2 row-start-1 text-center text-sm whitespace-nowrap text-muted sm:col-auto sm:row-auto">
-            Page {clientPage.page} of {totalPages}
+          <p
+            aria-live="polite"
+            aria-atomic="true"
+            className="col-span-2 row-start-1 text-center text-sm whitespace-nowrap text-muted sm:col-auto sm:row-auto"
+          >
+            {isFetching
+              ? `Loading page ${String(requestedPage)}…`
+              : `Page ${String(clientPage.page)} of ${String(totalPages)}`}
           </p>
           <button
-            className="row-start-2 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-line bg-surface px-3.5 text-sm font-semibold text-ink transition-colors duration-200 hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 disabled:cursor-not-allowed disabled:text-muted sm:w-auto"
+            className="row-start-2 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-line bg-surface px-3.5 text-sm font-semibold text-ink transition-colors duration-200 hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 aria-disabled:cursor-not-allowed aria-disabled:text-muted sm:w-auto"
             type="button"
-            disabled={clientPage.page >= totalPages}
-            onClick={onNextPage}
+            aria-disabled={nextUnavailable}
+            onClick={() => {
+              if (!nextUnavailable) onNextPage()
+            }}
           >
             Next
             <FiChevronRight aria-hidden="true" className="size-4" />
@@ -336,7 +369,7 @@ function ClientsEmpty({ organisationName }: ClientsEmptyProps) {
         <FiUsers aria-hidden="true" className="size-6" />
       </span>
       <h2 className="mt-5 text-lg font-semibold text-ink">No clients yet</h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 wrap-anywhere text-muted">
         {organisationName
           ? `${organisationName} does not have any clients yet.`
           : 'This organisation does not have any clients yet.'}

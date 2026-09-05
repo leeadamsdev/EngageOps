@@ -83,6 +83,10 @@ services:
             - dist/
             - package.json
             - pnpm-lock.yaml
+            - pnpm-workspace.yaml
+            - playwright-report/
+            - test-results/
+            - e2e-artifacts/
             - Dockerfile
 
         - action: rebuild
@@ -90,6 +94,9 @@ services:
 
         - action: rebuild
           path: ./src/frontend/pnpm-lock.yaml
+
+        - action: rebuild
+          path: ./src/frontend/pnpm-workspace.yaml
 
         - action: rebuild
           path: ./src/frontend/Dockerfile

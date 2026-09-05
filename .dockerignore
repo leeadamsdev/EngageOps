@@ -9,6 +9,9 @@ AGENTS.md
 **/obj
 **/node_modules
 **/dist
+**/playwright-report
+**/test-results
+**/e2e-artifacts
 
 .vs
 .idea

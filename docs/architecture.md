@@ -10,9 +10,11 @@ stores application and Identity data through one EF Core context.
 | --------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | [`src/backend/EngageOps.Api`](../src/backend/EngageOps.Api)                 | API host, feature code, Identity and persistence           |
 | [`src/frontend/src`](../src/frontend/src)                                   | React application and colocated frontend tests             |
+| [`src/frontend/e2e`](../src/frontend/e2e)                                   | Playwright browser journeys, fixtures and disposable stack lifecycle |
 | [`tests/backend/EngageOps.Api.Tests`](../tests/backend/EngageOps.Api.Tests) | Backend domain, mapping, persistence and HTTP tests        |
 | [`scripts`](../scripts)                                                     | PowerShell entry point for development seed/reset commands |
 | [`compose.yaml`](../compose.yaml)                                           | Local PostgreSQL, backend and frontend services            |
+| [`compose.e2e.yaml`](../compose.e2e.yaml)                                   | Isolated PostgreSQL and API for browser tests               |
 | [`.github`](../.github)                                                     | CI, CodeQL and dependency monitoring configuration         |
 
 Backend domain and application boundaries are organised by feature within the API

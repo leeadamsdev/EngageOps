@@ -69,7 +69,7 @@ export function ClientCreationForm({
         <h2 className="text-lg font-semibold text-ink" id="add-client-heading">
           Add client
         </h2>
-        <p className="mt-1 text-sm leading-6 text-muted">
+        <p className="mt-1 text-sm leading-6 wrap-anywhere text-muted">
           {organisationName
             ? `Add a client managed by ${organisationName}.`
             : 'Add a client managed by this organisation.'}

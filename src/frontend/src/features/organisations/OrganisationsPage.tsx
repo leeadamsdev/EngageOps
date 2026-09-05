@@ -87,7 +87,7 @@ export function OrganisationsPage({ userId }: OrganisationsPageProps) {
                       <FiBriefcase aria-hidden="true" className="size-5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-semibold text-ink">
+                      <p className="text-base font-semibold wrap-anywhere text-ink">
                         {organisation.name}
                       </p>
                       <p className="mt-1 text-sm text-muted">View clients</p>

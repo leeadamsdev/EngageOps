@@ -1,9 +1,18 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTestQueryClient } from '../../test/createTestQueryClient'
 import { TestQueryClientProvider } from '../../test/TestQueryClientProvider'
 import { ClientsPage } from './ClientsPage'
+import { useClients } from './useClients'
 
 const userId = '01990db2-4a3f-7d35-a2bd-6b69ac9c75bd'
 const organisationId = '01990db2-4a3f-7d35-a2bd-6b69ac9c75be'
@@ -38,7 +47,7 @@ describe('ClientsPage', () => {
     expect(await screen.findByText('Alpha Logistics')).toBeInTheDocument()
     expect(screen.getByText('Zeta Care')).toBeInTheDocument()
     expect(
-      screen.getByText('View the clients managed by Northstar Workforce.'),
+      screen.getByText('Manage this organisation’s clients.'),
     ).toBeInTheDocument()
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(
@@ -263,6 +272,75 @@ describe('ClientsPage', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText('Alpha Logistics')).not.toBeInTheDocument()
   })
+
+  it('retains the displayed page during loading and blocks repeated navigation', async () => {
+    let finishRequest: () => void = () => undefined
+    const nextPage = new Promise<Response>((resolve) => {
+      finishRequest = () => {
+        resolve(clientPageResponse(['Zeta Care'], 2, 41))
+      }
+    })
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(organisationsResponse())
+      .mockResolvedValueOnce(clientPageResponse(['Alpha Logistics'], 1, 41))
+      .mockReturnValueOnce(nextPage)
+    vi.stubGlobal('fetch', fetchMock)
+    renderPage()
+    await screen.findByText('Alpha Logistics')
+    const next = screen.getByRole('button', { name: 'Next' })
+    fireEvent.click(next)
+    expect(await screen.findByText('Loading page 2…')).toBeInTheDocument()
+    expect(screen.getByText('Alpha Logistics')).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Clients' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    )
+    expect(next).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(next)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    act(() => {
+      finishRequest()
+    })
+    expect(await screen.findByText('Zeta Care')).toBeInTheDocument()
+    expect(screen.queryByText('Alpha Logistics')).not.toBeInTheDocument()
+    expect(next).toHaveAttribute('aria-disabled', 'false')
+  })
+
+  it.each(['user', 'organisation'] as const)(
+    'never carries placeholder clients across a changed %s',
+    async (boundary) => {
+      const client = createTestQueryClient()
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn<typeof fetch>()
+          .mockResolvedValueOnce(clientPageResponse(['Private client']))
+          .mockReturnValue(new Promise<Response>(() => undefined)),
+      )
+      const { result, rerender } = renderHook(
+        ({ user, organisation }) => useClients(user, organisation, 1),
+        {
+          initialProps: { user: userId, organisation: organisationId },
+          wrapper: ({ children }) => (
+            <TestQueryClientProvider client={client}>
+              {children}
+            </TestQueryClientProvider>
+          ),
+        },
+      )
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true)
+      })
+      rerender({
+        user: boundary === 'user' ? 'another-user' : userId,
+        organisation:
+          boundary === 'organisation' ? 'another-organisation' : organisationId,
+      })
+      expect(result.current.isPending).toBe(true)
+      expect(result.current.data).toBeUndefined()
+    },
+  )
 })
 
 function renderPage(

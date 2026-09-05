@@ -23,7 +23,7 @@ organisation membership, with tenant relationships also enforced in PostgreSQL.
 - **Backend:** C# / .NET 10, ASP.NET Core Minimal APIs, EF Core, Npgsql and ASP.NET Core Identity.
 - **Frontend:** React 19, strict TypeScript, Vite, React Router, TanStack Query, Tailwind CSS and React Icons.
 - **Data:** PostgreSQL, with EF Core migrations.
-- **Testing:** xUnit v3 with Microsoft.Testing.Platform, PostgreSQL Testcontainers, Vitest and React Testing Library.
+- **Testing:** xUnit v3 with Microsoft.Testing.Platform, PostgreSQL Testcontainers, Vitest, React Testing Library and Playwright with axe accessibility checks.
 - **Tooling:** Docker Compose, GitHub Actions, CodeQL and dependency monitoring.
 
 The backend is a single feature-oriented API project. The frontend has matching
